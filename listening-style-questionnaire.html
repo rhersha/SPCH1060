@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Listening Style Questionnaire</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --ink: #1c2430;
+    --muted: #566273;
+    --line: #d6dbe3;
+    --accent: #2f5d8a;
+    --accent-dark: #22476b;
+    --zone-weak: #eef2f7;
+    --zone-mod: #dbe4ef;
+    --zone-strong: #c3d2e6;
+    --flag: #9a3d12;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  .wrap { max-width: 46rem; margin: 0 auto; padding: 1.25rem 1rem 0; }
+  h1 { font-size: 1.6rem; line-height: 1.2; margin: 0 0 .75rem; }
+  h2 { font-size: 1.25rem; line-height: 1.3; margin: 0 0 .75rem; }
+  p { margin: 0 0 .9rem; }
+  .muted { color: var(--muted); }
+
+  /* Scale reference */
+  .scale-key {
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: .25rem;
+    margin: 0 0 1.25rem; padding: 0; list-style: none;
+    font-size: .8rem; text-align: center; color: var(--muted);
+  }
+  .scale-key li { border-top: 3px solid var(--line); padding-top: .3rem; }
+  .scale-key b { display: block; font-size: 1rem; color: var(--ink); }
+
+  /* Items */
+  .item {
+    border: 0; border-top: 1px solid var(--line);
+    margin: 0; padding: 1rem 0 1.1rem;
+  }
+  .item legend {
+    float: left; width: 100%; padding: 0; margin: 0 0 .65rem;
+  }
+  .item legend .n { color: var(--muted); font-variant-numeric: tabular-nums; margin-right: .25rem; }
+  .item .scale { clear: both; display: flex; gap: .35rem; }
+  .item.missing { box-shadow: inset 4px 0 0 var(--flag); padding-left: .85rem; }
+  .item.missing legend::after {
+    content: "Not answered yet"; display: block; font-size: .85rem; color: var(--flag); margin-top: .15rem;
+  }
+
+  .opt { flex: 1 1 0; position: relative; min-width: 0; }
+  .opt input {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    margin: 0; opacity: 0; cursor: pointer;
+  }
+  .opt .box {
+    display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+    height: 100%; padding: .45rem .2rem .5rem;
+    border: 1px solid var(--line); border-radius: 6px;
+    text-align: center; transition: background-color .12s, border-color .12s;
+  }
+  .opt .num { font-weight: 600; font-size: 1.05rem; font-variant-numeric: tabular-nums; }
+  .opt .lab { font-size: .72rem; line-height: 1.2; color: var(--muted); }
+  .opt input:hover + .box { border-color: var(--accent); }
+  .opt input:checked + .box { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .opt input:checked + .box .lab { color: #e6eef7; }
+  .opt input:focus-visible + .box { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+  /* Sticky action bar */
+  .bar {
+    position: sticky; bottom: 0; z-index: 2;
+    background: var(--bg); border-top: 1px solid var(--line);
+    padding: .75rem 0; margin-top: .5rem;
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
+  }
+  .progress { font-size: .95rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+  button {
+    font: inherit; font-size: .95rem; cursor: pointer;
+    border-radius: 6px; padding: .55rem 1rem;
+  }
+  .primary { background: var(--accent); color: #fff; border: 1px solid var(--accent); font-weight: 600; }
+  .primary:hover { background: var(--accent-dark); }
+  .secondary { background: transparent; color: var(--accent); border: 1px solid var(--line); }
+  button:focus-visible, a:focus-visible, summary:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .notice { color: var(--flag); font-size: .95rem; margin: .75rem 0 0; }
+  .notice a { color: var(--flag); }
+
+  /* Results */
+  #results { border-top: 2px solid var(--ink); margin-top: 1.5rem; padding-top: 1.25rem; }
+  #results[hidden] { display: none; }
+  #results h2:focus { outline: none; }
+  .style-row { margin: 0 0 1.1rem; }
+  .style-head { display: flex; justify-content: space-between; align-items: baseline; gap: .75rem; margin-bottom: .3rem; }
+  .style-name { font-weight: 600; }
+  .style-score { font-variant-numeric: tabular-nums; color: var(--muted); font-size: .95rem; text-align: right; }
+  .style-score strong { color: var(--ink); font-size: 1.15rem; margin-right: .3rem; }
+  .track { position: relative; height: 26px; display: flex; border-radius: 4px; overflow: hidden; }
+  .zone.weak { width: 32.5%; background: var(--zone-weak); }
+  .zone.mod { width: 35%; background: var(--zone-mod); }
+  .zone.strong { width: 32.5%; background: var(--zone-strong); }
+  .fill {
+    position: absolute; left: 0; top: 8px; height: 10px;
+    background: var(--ink); border-radius: 0 5px 5px 0; min-width: 6px;
+  }
+  .axis { display: flex; font-size: .78rem; color: var(--muted); margin: -.4rem 0 1.25rem; }
+  .axis span { text-align: center; }
+  .axis .weak { width: 32.5%; } .axis .mod { width: 35%; } .axis .strong { width: 32.5%; }
+
+  .summary { font-size: 1.05rem; }
+  details { border-top: 1px solid var(--line); padding: .75rem 0; }
+  summary { cursor: pointer; color: var(--accent); font-weight: 600; }
+  .breakdown { margin: .75rem 0 0; padding: 0; list-style: none; font-size: .92rem; }
+  .breakdown li { margin-bottom: .7rem; }
+  .breakdown b { display: block; }
+  .actions { display: flex; gap: .6rem; flex-wrap: wrap; margin: .5rem 0 1rem; }
+
+  .cite { font-size: .82rem; color: var(--muted); border-top: 1px solid var(--line); padding: 1rem 0 1.5rem; margin-top: 1rem; }
+  .cite p { margin: 0 0 .4rem; padding-left: 1.5em; text-indent: -1.5em; }
+
+  @media (max-width: 480px) {
+    body { font-size: 16px; }
+    .opt .lab { display: none; }
+    .opt .box { padding: .55rem .2rem; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+  @media print {
+    .bar, .actions, .notice { display: none !important; }
+    details { display: block; }
+    .item { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <h1>Listening Style Questionnaire</h1>
+  <p>Think about how you usually listen in everyday conversations with friends, family, classmates, and coworkers. Rate how much you agree with each statement. Some items may seem similar; that’s intentional. Answer each one honestly.</p>
+  <p class="muted">Your answers stay in your browser. Nothing is saved or sent anywhere.</p>
+
+  <ul class="scale-key" aria-label="Rating scale">
+    <li><b>1</b>Strongly disagree</li>
+    <li><b>2</b>Disagree</li>
+    <li><b>3</b>Neutral</li>
+    <li><b>4</b>Agree</li>
+    <li><b>5</b>Strongly agree</li>
+  </ul>
+
+  <form id="items" novalidate></form>
+
+  <div class="bar">
+    <span class="progress" id="progress" aria-live="polite">0 of 20 answered</span>
+    <button type="button" class="primary" id="score-btn">See my results</button>
+  </div>
+  <p class="notice" id="notice" role="alert" hidden></p>
+
+  <section id="results" hidden aria-labelledby="results-heading">
+    <h2 id="results-heading" tabindex="-1">Your listening styles</h2>
+    <p class="summary" id="summary"></p>
+    <div id="bars"></div>
+    <div class="axis" aria-hidden="true">
+      <span class="weak">Weak (5–11)</span><span class="mod">Moderate (12–18)</span><span class="strong">Strong (19–25)</span>
+    </div>
+    <p>Your highest score suggests the style you lean on most, but many people score high on two or more styles, and your style may shift depending on who you’re talking to and what’s at stake. This questionnaire is a tool for self-reflection, not a validated research instrument.</p>
+    <details>
+      <summary>Show how each score was calculated</summary>
+      <p class="muted" style="margin-top:.6rem">Each style has one reverse-scored item, a statement describing the opposite of that style. Its rating is subtracted from 6 before it’s added in.</p>
+      <ul class="breakdown" id="breakdown"></ul>
+    </details>
+    <div class="actions">
+      <button type="button" class="secondary" id="print-btn">Print or save as PDF</button>
+      <button type="button" class="secondary" id="reset-btn">Start over</button>
+    </div>
+  </section>
+
+  <footer class="cite">
+    <p>Adapted from: Watson, K. W., Barker, L. L., &amp; Weaver, J. B., III. (1992, March). <i>Development and validation of the Listener Preference Profile</i> [Paper presentation]. International Listening Association Convention, Seattle, WA, United States.</p>
+  </footer>
+</main>
+
+<script>
+(function () {
+  var ITEMS = [
+    "I pay close attention to how the other person is feeling while they talk.",
+    "I focus on a speaker’s feelings as much as on their words.",
+    "When someone talks with me, I notice ways we are alike and different.",
+    "I generally don’t pay attention to the other person’s emotions.",
+    "When someone tells me about a problem, I give them my full attention.",
+    "I listen closely to the reasons and evidence behind what someone tells me.",
+    "I tend to tune out when someone starts explaining something technical or detailed.",
+    "I wait until I’ve heard someone’s whole explanation before forming an opinion.",
+    "I mentally check whether what someone tells me is backed up by facts.",
+    "I’d rather people give me the facts than their opinions.",
+    "I want people to get to the point and tell me what they need from me.",
+    "It frustrates me when someone’s explanation is disorganized.",
+    "If someone wants me to do something, I’d rather they just say so directly.",
+    "When someone rambles, I get irritated.",
+    "I don’t mind when someone takes a while to get to their point.",
+    "I have trouble listening when I have other things to do or places to be.",
+    "When I don’t have time to talk, I have no problem telling the other person.",
+    "During conversations, I often check the time.",
+    "I avoid starting conversations when I’m short on time.",
+    "I can listen patiently even when I’m in a hurry."
+  ];
+  var LABELS = ["Strongly disagree", "Disagree", "Neutral", "Agree", "Strongly agree"];
+  var STYLES = [
+    { name: "People-oriented",  items: [1, 2, 3, 5],     rev: 4 },
+    { name: "Content-oriented", items: [6, 8, 9, 10],    rev: 7 },
+    { name: "Action-oriented",  items: [11, 12, 13, 14], rev: 15 },
+    { name: "Time-oriented",    items: [16, 17, 18, 19], rev: 20 }
+  ];
+
+  var form = document.getElementById("items");
+  var progress = document.getElementById("progress");
+  var notice = document.getElementById("notice");
+  var results = document.getElementById("results");
+
+  // Build items
+  ITEMS.forEach(function (text, i) {
+    var n = i + 1;
+    var fs = document.createElement("fieldset");
+    fs.className = "item";
+    fs.id = "item-" + n;
+    var html = '<legend><span class="n">' + n + '.</span> ' + text + '</legend><div class="scale">';
+    LABELS.forEach(function (lab, j) {
+      html += '<label class="opt"><input type="radio" name="q' + n + '" value="' + (j + 1) + '">' +
+              '<span class="box"><span class="num">' + (j + 1) + '</span><span class="lab">' + lab + '</span></span></label>';
+    });
+    html += '</div>';
+    fs.innerHTML = html;
+    form.appendChild(fs);
+  });
+
+  function val(n) {
+    var c = form.querySelector('input[name="q' + n + '"]:checked');
+    return c ? Number(c.value) : null;
+  }
+  function missingItems() {
+    var m = [];
+    for (var n = 1; n <= ITEMS.length; n++) if (val(n) === null) m.push(n);
+    return m;
+  }
+  function band(score) {
+    if (score >= 19) return "Strong preference";
+    if (score >= 12) return "Moderate preference";
+    return "Weak preference";
+  }
+  function joinNames(list) {
+    if (list.length === 1) return list[0];
+    if (list.length === 2) return list[0] + " and " + list[1];
+    return list.slice(0, -1).join(", ") + ", and " + list[list.length - 1];
+  }
+
+  form.addEventListener("change", function (e) {
+    var fs = e.target.closest(".item");
+    if (fs) fs.classList.remove("missing");
+    var done = ITEMS.length - missingItems().length;
+    progress.textContent = done + " of " + ITEMS.length + " answered";
+    if (!results.hidden) score(); // keep results current if someone changes an answer
+    notifyHeight();
+  });
+
+  function score() {
+    var missing = missingItems();
+    if (missing.length) {
+      missing.forEach(function (n) { document.getElementById("item-" + n).classList.add("missing"); });
+      var links = missing.map(function (n) { return '<a href="#item-' + n + '">' + n + '</a>'; });
+      notice.innerHTML = "Answer " + (missing.length === 1 ? "item " : "items ") + joinNames(links) + " to see your results.";
+      notice.hidden = false;
+      results.hidden = true;
+      notifyHeight();
+      return false;
+    }
+    notice.hidden = true;
+
+    var totals = STYLES.map(function (s) {
+      var ratings = s.items.map(val);
+      var r = val(s.rev);
+      var total = ratings.reduce(function (a, b) { return a + b; }, 0) + (6 - r);
+      return { style: s, ratings: ratings, rev: r, total: total };
+    });
+
+    // Bars
+    document.getElementById("bars").innerHTML = totals.map(function (t) {
+      var pct = ((t.total - 5) / 20) * 100;
+      return '<div class="style-row">' +
+        '<div class="style-head"><span class="style-name">' + t.style.name + '</span>' +
+        '<span class="style-score"><strong>' + t.total + '</strong>' + band(t.total) + '</span></div>' +
+        '<div class="track" aria-hidden="true"><span class="zone weak"></span><span class="zone mod"></span><span class="zone strong"></span>' +
+        '<span class="fill" style="width:' + pct + '%"></span></div></div>';
+    }).join("");
+
+    // Summary sentence
+    var max = Math.max.apply(null, totals.map(function (t) { return t.total; }));
+    var top = totals.filter(function (t) { return t.total === max; }).map(function (t) { return t.style.name; });
+    var summary;
+    if (top.length === 1) summary = "Your highest score is " + top[0] + " (" + max + ").";
+    else if (top.length === 4) summary = "You scored the same on all four styles (" + max + "). You may shift styles easily depending on the situation.";
+    else summary = "You scored highest, and equally, on " + joinNames(top) + " (" + max + ").";
+    document.getElementById("summary").textContent = summary;
+
+    // Breakdown
+    document.getElementById("breakdown").innerHTML = totals.map(function (t) {
+      return '<li><b>' + t.style.name + ': ' + t.total + '</b>' +
+        'Items ' + t.style.items.join(", ") + ': ' + t.ratings.join(" + ") + ' = ' +
+        t.ratings.reduce(function (a, b) { return a + b; }, 0) + '. ' +
+        'Item ' + t.style.rev + ' reversed: 6 − ' + t.rev + ' = ' + (6 - t.rev) + '.</li>';
+    }).join("");
+
+    results.hidden = false;
+    notifyHeight();
+    return true;
+  }
+
+  document.getElementById("score-btn").addEventListener("click", function () {
+    if (score()) {
+      var h = document.getElementById("results-heading");
+      h.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+      h.focus({ preventScroll: true });
+    } else {
+      var first = form.querySelector(".item.missing input");
+      if (first) first.closest(".item").scrollIntoView({ block: "center" });
+    }
+  });
+
+  document.getElementById("reset-btn").addEventListener("click", function () {
+    form.reset();
+    form.querySelectorAll(".missing").forEach(function (el) { el.classList.remove("missing"); });
+    results.hidden = true;
+    notice.hidden = true;
+    progress.textContent = "0 of " + ITEMS.length + " answered";
+    window.scrollTo(0, 0);
+    notifyHeight();
+  });
+
+  document.getElementById("print-btn").addEventListener("click", function () {
+    document.querySelector("details").open = true;
+    window.print();
+  });
+
+  // Lets a host page resize the iframe if it listens for this message (harmless otherwise)
+  function notifyHeight() {
+    if (window.parent !== window) {
+      window.parent.postMessage({ type: "questionnaire-height", height: document.documentElement.scrollHeight }, "*");
+    }
+  }
+  window.addEventListener("load", notifyHeight);
+})();
+</script>
+</body>
+</html>
