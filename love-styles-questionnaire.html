@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Love Styles Questionnaire</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --ink: #1c2430;
+    --muted: #566273;
+    --line: #d6dbe3;
+    --accent: #a3214f;
+    --accent-dark: #7f1a3e;
+    --flag: #9a3d12;
+    /* Lee's color wheel, mixed like paint: three primaries and the secondaries between them */
+    --eros: #e2364b;
+    --agape: #f07b1d;
+    --storge: #f2b705;
+    --pragma: #2f9e5b;
+    --ludus: #2c6be0;
+    --mania: #8b46c8;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  .wrap { max-width: 46rem; margin: 0 auto; padding: 1.25rem 1rem 0; }
+  h1 { font-size: 1.6rem; line-height: 1.2; margin: 0 0 .75rem; }
+  h2 { font-size: 1.25rem; line-height: 1.3; margin: 0 0 .75rem; }
+  h3 { font-size: 1.05rem; line-height: 1.3; margin: 0 0 .25rem; }
+  p { margin: 0 0 .9rem; }
+  .muted { color: var(--muted); }
+
+  /* A thin strip of the six style colors under the title, in wheel order */
+  .spectrum {
+    height: 6px; border-radius: 3px; margin: 0 0 1rem;
+    background: linear-gradient(90deg, var(--eros) 0 16.66%, var(--agape) 0 33.33%, var(--storge) 0 50%,
+      var(--pragma) 0 66.66%, var(--ludus) 0 83.33%, var(--mania) 0 100%);
+  }
+
+  /* Scale reference */
+  .scale-key {
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: .25rem;
+    margin: 0 0 1.25rem; padding: 0; list-style: none;
+    font-size: .8rem; text-align: center; color: var(--muted);
+  }
+  .scale-key li { border-top: 3px solid var(--line); padding-top: .3rem; }
+  .scale-key b { display: block; font-size: 1rem; color: var(--ink); }
+
+  /* Items */
+  .item {
+    border: 0; border-top: 1px solid var(--line);
+    margin: 0; padding: 1rem 0 1.1rem;
+  }
+  .item legend { float: left; width: 100%; padding: 0; margin: 0 0 .65rem; }
+  .item legend .n { color: var(--muted); font-variant-numeric: tabular-nums; margin-right: .25rem; }
+  .item .scale { clear: both; display: flex; gap: .35rem; }
+  .item.missing { box-shadow: inset 4px 0 0 var(--flag); padding-left: .85rem; }
+  .item.missing legend::after {
+    content: "Not answered yet"; display: block; font-size: .85rem; color: var(--flag); margin-top: .15rem;
+  }
+
+  .opt { flex: 1 1 0; position: relative; min-width: 0; }
+  .opt input {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    margin: 0; opacity: 0; cursor: pointer;
+  }
+  .opt .box {
+    display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+    height: 100%; padding: .45rem .2rem .5rem;
+    border: 1px solid var(--line); border-radius: 6px;
+    text-align: center; transition: background-color .12s, border-color .12s;
+  }
+  .opt .num { font-weight: 600; font-size: 1.05rem; font-variant-numeric: tabular-nums; }
+  .opt .lab { font-size: .72rem; line-height: 1.2; color: var(--muted); }
+  .opt input:hover + .box { border-color: var(--accent); }
+  .opt input:checked + .box { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .opt input:checked + .box .lab { color: #f6e3ea; }
+  .opt input:focus-visible + .box { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+  /* Sticky action bar */
+  .bar {
+    position: sticky; bottom: 0; z-index: 2;
+    background: var(--bg); border-top: 1px solid var(--line);
+    padding: .75rem 0; margin-top: .5rem;
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
+  }
+  .progress { font-size: .95rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+  button {
+    font: inherit; font-size: .95rem; cursor: pointer;
+    border-radius: 6px; padding: .55rem 1rem;
+  }
+  .primary { background: var(--accent); color: #fff; border: 1px solid var(--accent); font-weight: 600; }
+  .primary:hover { background: var(--accent-dark); }
+  .secondary { background: transparent; color: var(--accent); border: 1px solid var(--line); }
+  button:focus-visible, a:focus-visible, summary:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .notice { color: var(--flag); font-size: .95rem; margin: .75rem 0 0; }
+  .notice a { color: var(--flag); }
+
+  /* Results */
+  #results { border-top: 2px solid var(--ink); margin-top: 1.5rem; padding-top: 1.25rem; }
+  #results[hidden] { display: none; }
+  #results h2:focus { outline: none; }
+  .lede { font-size: 1.15rem; line-height: 1.5; }
+
+  /* The wheel */
+  .wheel-wrap { max-width: 27rem; margin: .5rem auto 1rem; }
+  .wheel { display: block; width: 100%; height: auto; overflow: visible; }
+  .wheel .ghost { opacity: .13; }
+  .wheel .petal {
+    transform-box: view-box; transform-origin: 0 0;
+    transition: transform .75s cubic-bezier(.2, .9, .3, 1.25);
+  }
+  .wheel .heart-pop {
+    transform-box: fill-box; transform-origin: center;
+    transition: transform .45s cubic-bezier(.2, .9, .3, 1.6), opacity .3s;
+  }
+  .wheel.pre .petal { transform: scale(0); }
+  .wheel.pre .heart-pop { transform: scale(0); opacity: 0; }
+  .wheel .lbl { font: 600 13px system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; fill: var(--ink); }
+  .wheel .lbl-sc { font-weight: 400; fill: var(--muted); }
+  .wheel-note { font-size: .9rem; color: var(--muted); text-align: center; margin: 0 auto 1.5rem; max-width: 34rem; }
+
+  /* Love color */
+  .lovecolor {
+    display: flex; align-items: center; gap: 1.1rem;
+    padding: 1rem 0 1.25rem; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+    margin-bottom: 1.25rem;
+  }
+  .swatch {
+    flex: 0 0 auto; width: 5.25rem; height: 5.25rem; border-radius: 50%;
+    box-shadow: inset 0 0 0 4px rgba(255, 255, 255, .55);
+  }
+  .lovecolor p { margin: 0; }
+  .hex { font-variant-numeric: tabular-nums; color: var(--muted); }
+
+  /* Style rows, highest first */
+  .styles { list-style: none; margin: 0 0 1rem; padding: 0; }
+  .style-row { padding: 0 0 1.2rem; }
+  .style-head { display: flex; align-items: baseline; gap: .5rem; flex-wrap: wrap; margin-bottom: .35rem; }
+  .dot { width: .85rem; height: .85rem; border-radius: 50%; align-self: center; flex: 0 0 auto; }
+  .style-name { font-weight: 700; font-size: 1.1rem; }
+  .kind { color: var(--muted); font-size: .9rem; }
+  .style-score { margin-left: auto; font-variant-numeric: tabular-nums; color: var(--muted); font-size: .95rem; }
+  .style-score strong { color: var(--ink); font-size: 1.15rem; margin-right: .3rem; }
+  .track { height: 12px; border-radius: 6px; background: #eef1f5; overflow: hidden; margin-bottom: .45rem; }
+  .fill { display: block; height: 100%; border-radius: 6px; min-width: 6px; }
+  .desc { font-size: .95rem; margin: 0; }
+
+  details { border-top: 1px solid var(--line); padding: .75rem 0; }
+  summary { cursor: pointer; color: var(--accent); font-weight: 600; }
+  .breakdown { margin: .75rem 0 0; padding: 0; list-style: none; font-size: .92rem; }
+  .breakdown li { margin-bottom: .7rem; }
+  .breakdown b { display: block; }
+  .actions { display: flex; gap: .6rem; flex-wrap: wrap; margin: .5rem 0 1rem; }
+
+  .cite { font-size: .82rem; color: var(--muted); border-top: 1px solid var(--line); padding: 1rem 0 1.5rem; margin-top: 1rem; }
+  .cite p { margin: 0 0 .4rem; padding-left: 1.5em; text-indent: -1.5em; }
+
+  @media (max-width: 480px) {
+    body { font-size: 16px; }
+    .opt .lab { display: none; }
+    .opt .box { padding: .55rem .2rem; }
+    .swatch { width: 4.25rem; height: 4.25rem; }
+    .wheel .lbl { font-size: 17px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
+  @media print {
+    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .bar, .actions, .notice { display: none !important; }
+    details { display: block; }
+    .item, .style-row, .wheel-wrap, .lovecolor { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <h1>Love Styles Questionnaire</h1>
+  <div class="spectrum" aria-hidden="true"></div>
+  <p>This questionnaire explores your attitudes about romantic love, using the six love styles described by sociologist John Alan Lee. Rate how much you agree with each statement.</p>
+  <p>There are no right answers, and you don’t need to be in a relationship to take it. Answer based on what love means to you and how you tend to act when you’re in love, not on how any particular relationship is going.</p>
+  <p class="muted">Your answers stay in your browser. Nothing is saved or sent anywhere.</p>
+
+  <ul class="scale-key" aria-label="Rating scale">
+    <li><b>1</b>Strongly disagree</li>
+    <li><b>2</b>Disagree</li>
+    <li><b>3</b>Neutral</li>
+    <li><b>4</b>Agree</li>
+    <li><b>5</b>Strongly agree</li>
+  </ul>
+
+  <form id="items" novalidate></form>
+
+  <div class="bar">
+    <span class="progress" id="progress" aria-live="polite">0 of 24 answered</span>
+    <button type="button" class="primary" id="score-btn">See my results</button>
+  </div>
+  <p class="notice" id="notice" role="alert" hidden></p>
+
+  <section id="results" hidden aria-labelledby="results-heading">
+    <h2 id="results-heading" tabindex="-1">Your love styles</h2>
+    <p class="lede" id="lede"></p>
+
+    <div class="wheel-wrap">
+      <svg class="wheel pre" id="wheel" viewBox="-210 -180 420 364" role="img" aria-labelledby="wheel-title">
+        <title id="wheel-title">Your love styles wheel</title>
+      </svg>
+    </div>
+    <p class="wheel-note">Lee compared love styles to colors. Eros, Storge, and Ludus are the primaries. Each style between them is a blend of its two neighbors, the way orange is a blend of red and yellow. The longer a petal, the more you agreed with that style. The heart shows where your answers balance out.</p>
+
+    <div class="lovecolor">
+      <span class="swatch" id="swatch" aria-hidden="true"></span>
+      <div>
+        <h3>Your love color</h3>
+        <p id="lovecolor-text"></p>
+      </div>
+    </div>
+
+    <ol class="styles" id="styles"></ol>
+
+    <p>Most people agree with several styles at once, and your profile can shift with time and with different relationships. This questionnaire is a tool for self-reflection, not a validated research instrument or a judgment about you or your relationship.</p>
+    <details>
+      <summary>Show how each score was calculated</summary>
+      <p class="muted" style="margin-top:.6rem">Each style has four statements. Your score for a style is the average of your four ratings, from 1 (strongly disagree) to 5 (strongly agree).</p>
+      <ul class="breakdown" id="breakdown"></ul>
+    </details>
+    <div class="actions">
+      <button type="button" class="secondary" id="print-btn">Print or save as PDF</button>
+      <button type="button" class="secondary" id="reset-btn">Start over</button>
+    </div>
+  </section>
+
+  <footer class="cite">
+    <p>Statements written for this course, based on the love styles described in: Lee, J. A. (1977). A typology of styles of loving. <i>Personality and Social Psychology Bulletin, 3</i>(2), 173–182.</p>
+    <p>For the validated research measure of love styles, see: Hendrick, C., &amp; Hendrick, S. S. (1986). A theory and method of love. <i>Journal of Personality and Social Psychology, 50</i>(2), 392–402.</p>
+  </footer>
+</main>
+
+<script>
+(function () {
+  // Styles in wheel order, clockwise from the top: each secondary sits between the two primaries it blends.
+  var STYLES = [
+    { key: "eros",   name: "Eros",   color: "#e2364b", kind: "Primary",            short: "passionate love",
+      desc: "Chemistry, intensity, and a strong sense that this person is the one. Despite the intensity, eros tends to be secure: confident in the connection rather than anxious about it." },
+    { key: "agape",  name: "Agape",  color: "#f07b1d", kind: "Blend of Eros and Storge", short: "giving love",
+      desc: "Putting a partner’s well-being first, patiently and generously, without keeping score. Agape is worth balancing with care for your own needs." },
+    { key: "storge", name: "Storge", color: "#f2b705", kind: "Primary",            short: "friendship love",
+      desc: "Trust, shared interests, and companionship that grow slowly. Often there’s no single moment when the relationship became romantic." },
+    { key: "pragma", name: "Pragma", color: "#2f9e5b", kind: "Blend of Storge and Ludus", short: "practical love",
+      desc: "Choosing a partner thoughtfully for fit: shared values, goals, and plans for the future. For pragma, compatibility is the foundation love grows from." },
+    { key: "ludus",  name: "Ludus",  color: "#2c6be0", kind: "Primary",            short: "playful love",
+      desc: "Dating as fun and freedom. Ludus prefers to keep things light and can feel hemmed in by commitment. It works best when everyone involved wants the same thing." },
+    { key: "mania",  name: "Mania",  color: "#8b46c8", kind: "Blend of Ludus and Eros", short: "anxious love",
+      desc: "The intensity of eros with the uncertainty of ludus: highs and lows, jealousy, and a need for reassurance. Mania scores often rise when a relationship feels uncertain. If worry about a relationship is taking over, talking it through with someone you trust can help." }
+  ];
+
+  // Statements cycle through the styles so that no two in a row measure the same one.
+  // Every statement asks about the respondent's own beliefs or tendencies, never about a particular partner,
+  // so that scores reflect attitudes about love rather than how a current relationship is going.
+  var ITEMS = [
+    { s: "eros",   t: "I believe in instant chemistry: when it’s right, you feel it right away." },
+    { s: "ludus",  t: "I like to keep dating fun and light rather than serious." },
+    { s: "storge", t: "I want a romantic partner who is also one of my closest friends." },
+    { s: "mania",  t: "When someone I’m dating doesn’t reply to me quickly, I start to worry." },
+    { s: "pragma", t: "Before getting serious with someone, I think about whether our goals for the future fit together." },
+    { s: "agape",  t: "In a relationship, I would rather go without something myself than let my partner go without." },
+    { s: "eros",   t: "Strong physical attraction is essential for me in a romantic relationship." },
+    { s: "ludus",  t: "I enjoy having more than one person interested in me at the same time." },
+    { s: "storge", t: "I would rather love grow gradually over time than hit all at once." },
+    { s: "mania",  t: "I tend to feel jealous when someone I’m dating gives attention to other people." },
+    { s: "pragma", t: "It matters to me that a partner shares my values about things like money, family, or religion." },
+    { s: "agape",  t: "When I love someone, their happiness matters more to me than my own." },
+    { s: "eros",   t: "I want love to feel intense and exciting." },
+    { s: "ludus",  t: "When a relationship starts getting too serious, I tend to pull back." },
+    { s: "storge", t: "In a relationship, I value comfort and companionship more than excitement." },
+    { s: "mania",  t: "When I’m in love, my mood rises and falls with how the relationship is going." },
+    { s: "pragma", t: "I think about how a partner would fit into my plans for my life." },
+    { s: "agape",  t: "I believe in standing by a partner through hard times without expecting anything in return." },
+    { s: "eros",   t: "I tend to fall for a particular “type” of person." },
+    { s: "ludus",  t: "I don’t think a partner needs to know about everyone else I’m interested in." },
+    { s: "storge", t: "I think the best romantic relationships grow out of friendship." },
+    { s: "mania",  t: "In a relationship, I need regular reassurance that the other person still cares about me." },
+    { s: "pragma", t: "I would rather choose a partner thoughtfully than fall for someone on impulse." },
+    { s: "agape",  t: "I find it easy to forgive a partner who lets me down." }
+  ];
+  var LABELS = ["Strongly disagree", "Disagree", "Neutral", "Agree", "Strongly agree"];
+  var SVGNS = "http://www.w3.org/2000/svg";
+
+  var form = document.getElementById("items");
+  var progress = document.getElementById("progress");
+  var notice = document.getElementById("notice");
+  var results = document.getElementById("results");
+  var wheel = document.getElementById("wheel");
+
+  // Build items
+  ITEMS.forEach(function (item, i) {
+    var n = i + 1;
+    var fs = document.createElement("fieldset");
+    fs.className = "item";
+    fs.id = "item-" + n;
+    var html = '<legend><span class="n">' + n + '.</span> ' + item.t + '</legend><div class="scale">';
+    LABELS.forEach(function (lab, j) {
+      html += '<label class="opt"><input type="radio" name="q' + n + '" value="' + (j + 1) + '">' +
+              '<span class="box"><span class="num">' + (j + 1) + '</span><span class="lab">' + lab + '</span></span></label>';
+    });
+    html += '</div>';
+    fs.innerHTML = html;
+    form.appendChild(fs);
+  });
+
+  function val(n) {
+    var c = form.querySelector('input[name="q' + n + '"]:checked');
+    return c ? Number(c.value) : null;
+  }
+  function missingItems() {
+    var m = [];
+    for (var n = 1; n <= ITEMS.length; n++) if (val(n) === null) m.push(n);
+    return m;
+  }
+  function band(score) {
+    if (score >= 4) return "Strong";
+    if (score >= 2.5) return "Moderate";
+    return "Light";
+  }
+  function fmt(x) { return x.toFixed(2).replace(/0$/, "").replace(/\.0$/, ".0"); }
+  function joinNames(list) {
+    if (list.length === 1) return list[0];
+    if (list.length === 2) return list[0] + " and " + list[1];
+    return list.slice(0, -1).join(", ") + ", and " + list[list.length - 1];
+  }
+
+  // Color helpers
+  function hexToRgb(h) { return [parseInt(h.substr(1, 2), 16), parseInt(h.substr(3, 2), 16), parseInt(h.substr(5, 2), 16)]; }
+  function rgbToHex(c) {
+    return "#" + c.map(function (v) { var s = Math.round(Math.max(0, Math.min(255, v))).toString(16); return s.length === 1 ? "0" + s : s; }).join("");
+  }
+  function mix(a, b, t) { return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t]; }
+
+  // Wheel geometry: angles in degrees, clockwise from the top
+  function pt(r, a) {
+    var t = (a - 90) * Math.PI / 180;
+    return [r * Math.cos(t), r * Math.sin(t)];
+  }
+  function p2s(p) { return p[0].toFixed(2) + "," + p[1].toFixed(2); }
+  function sector(r0, r1, a0, a1) {
+    return "M" + p2s(pt(r1, a0)) + " A" + r1 + "," + r1 + " 0 0 1 " + p2s(pt(r1, a1)) +
+           " L" + p2s(pt(r0, a1)) + " A" + r0 + "," + r0 + " 0 0 0 " + p2s(pt(r0, a0)) + " Z";
+  }
+  function el(tag, attrs) {
+    var e = document.createElementNS(SVGNS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    return e;
+  }
+
+  var R0 = 30, R = 120, PAD = 1.6;
+
+  function drawWheel(scores, heart, heartFill) {
+    // Clear everything but the title
+    while (wheel.childNodes.length > 1) wheel.removeChild(wheel.lastChild);
+    // A rainbow fill for the heart when someone's answers are perfectly balanced
+    var defs = el("defs", {});
+    var grad = el("linearGradient", { id: "lsq-rainbow", x1: "0", y1: "0", x2: "1", y2: "1" });
+    STYLES.forEach(function (st, i) {
+      grad.appendChild(el("stop", { offset: (i / 5).toFixed(2), "stop-color": st.color }));
+    });
+    defs.appendChild(grad);
+    wheel.appendChild(defs);
+    var g = el("g", {});
+    STYLES.forEach(function (st, i) {
+      var a0 = i * 60 - 30 + PAD, a1 = i * 60 + 30 - PAD;
+      var r1 = R0 + 8 + ((scores[i] - 1) / 4) * (R - R0 - 8);
+      g.appendChild(el("path", { "class": "ghost", d: sector(R0, R, a0, a1), fill: st.color }));
+      var petal = el("path", { "class": "petal", d: sector(R0, r1, a0, a1), fill: st.color });
+      petal.style.transitionDelay = (i * 70) + "ms";
+      g.appendChild(petal);
+
+      // Label outside the wheel
+      var lp = pt(R + 18, i * 60);
+      var anchor = Math.abs(lp[0]) < 5 ? "middle" : (lp[0] > 0 ? "start" : "end");
+      var dy = lp[1] < -100 ? -16 : (lp[1] > 100 ? 14 : -3);
+      var tx = el("text", { "class": "lbl", x: lp[0].toFixed(1), y: (lp[1] + dy).toFixed(1), "text-anchor": anchor });
+      tx.appendChild(document.createTextNode(st.name));
+      var ts = el("tspan", { "class": "lbl-sc", x: lp[0].toFixed(1), dy: "1.2em" });
+      ts.appendChild(document.createTextNode(fmt(scores[i])));
+      tx.appendChild(ts);
+      g.appendChild(tx);
+    });
+    // Hub
+    g.appendChild(el("circle", { cx: 0, cy: 0, r: R0 - 3, fill: "#ffffff", stroke: "#d6dbe3", "stroke-width": 1.5 }));
+    // Heart marker at the balance point
+    var hp = el("g", { transform: "translate(" + heart[0].toFixed(2) + " " + heart[1].toFixed(2) + ")" });
+    var pop = el("g", { "class": "heart-pop" });
+    var HEART = "M0,9 C-15,-1 -14,-14 -6.5,-14 C-3,-14 0,-11.5 0,-8.5 C0,-11.5 3,-14 6.5,-14 C14,-14 15,-1 0,9 Z";
+    // White halo, then the heart itself with a dark outline, so it stands out on any petal
+    pop.appendChild(el("path", { d: HEART, fill: "#ffffff", stroke: "#ffffff", "stroke-width": 7, "stroke-linejoin": "round" }));
+    pop.appendChild(el("path", { d: HEART, fill: heartFill, stroke: "#1c2430", "stroke-width": 1.8, "stroke-linejoin": "round" }));
+    pop.style.transitionDelay = "620ms";
+    hp.appendChild(pop);
+    g.appendChild(hp);
+    wheel.appendChild(g);
+
+    var desc = STYLES.map(function (st, i) { return st.name + " " + fmt(scores[i]); }).join(", ");
+    wheel.setAttribute("aria-label", "Love styles wheel. Scores out of 5: " + desc + ".");
+  }
+
+  function relationLine(top, second) {
+    var i = STYLES.indexOf(top), j = STYLES.indexOf(second);
+    var d = Math.min((i - j + 6) % 6, (j - i + 6) % 6);
+    if (d === 3) {
+      return "Your next-highest, " + second.name + ", sits directly across the wheel from it: complementary colors. Holding two very different ideas about love at once is common, and it can make for some interesting inner debates.";
+    }
+    if (d === 1) {
+      var sec = top.kind === "Primary" ? second : top;
+      return "Your next-highest, " + second.name + ", is its next-door neighbor on the wheel. Lee saw " + sec.name + " as a " + sec.kind.charAt(0).toLowerCase() + sec.kind.slice(1) + ", so the two share some DNA.";
+    }
+    var mid = STYLES[((i + 2) % 6 === j) ? (i + 1) % 6 : (j + 1) % 6];
+    if (top.kind === "Primary") {
+      return "Your next-highest is " + second.name + ". Mix those two primaries and you get " + mid.name + ", the style between them on the wheel.";
+    }
+    return "Your next-highest is " + second.name + ". Both are blends, and the primary they share is " + mid.name + ".";
+  }
+
+  form.addEventListener("change", function (e) {
+    var fs = e.target.closest(".item");
+    if (fs) fs.classList.remove("missing");
+    var done = ITEMS.length - missingItems().length;
+    progress.textContent = done + " of " + ITEMS.length + " answered";
+    if (!results.hidden) score(false); // keep results current if someone changes an answer
+    notifyHeight();
+  });
+
+  function score(animate) {
+    var missing = missingItems();
+    if (missing.length) {
+      missing.forEach(function (n) { document.getElementById("item-" + n).classList.add("missing"); });
+      var links = missing.map(function (n) { return '<a href="#item-' + n + '">' + n + '</a>'; });
+      notice.innerHTML = "Answer " + (missing.length === 1 ? "item " : "items ") + joinNames(links) + " to see your results.";
+      notice.hidden = false;
+      results.hidden = true;
+      notifyHeight();
+      return false;
+    }
+    notice.hidden = true;
+
+    // Per-style ratings and averages, in wheel order
+    var data = STYLES.map(function (st) {
+      var nums = [], ratings = [];
+      ITEMS.forEach(function (it, i) { if (it.s === st.key) { nums.push(i + 1); ratings.push(val(i + 1)); } });
+      var sum = ratings.reduce(function (a, b) { return a + b; }, 0);
+      return { style: st, nums: nums, ratings: ratings, sum: sum, avg: sum / ratings.length };
+    });
+    var scores = data.map(function (d) { return d.avg; });
+
+    // Balance point: each style pulls toward its own spot on the wheel, as hard as you agreed with it
+    var vx = 0, vy = 0;
+    data.forEach(function (d, i) { var u = pt(1, i * 60); vx += u[0] * d.avg; vy += u[1] * d.avg; });
+    var mag = Math.sqrt(vx * vx + vy * vy);
+    var focus = Math.min(1, mag / 4);            // 0 = perfectly balanced, 1 = one style only
+    var ang = (Math.atan2(vy, vx) * 180 / Math.PI + 90 + 360) % 360;  // clockwise from top
+    var pos = ang / 60, lo = Math.floor(pos) % 6, hi = (lo + 1) % 6, frac = pos - Math.floor(pos);
+    var hue = mix(hexToRgb(STYLES[lo].color), hexToRgb(STYLES[hi].color), frac);
+    var strength = Math.max(0.35, Math.min(1, focus * 3));
+    var loveRgb = mix([255, 255, 255], hue, strength);
+    var loveHex = rgbToHex(loveRgb);
+    var near = frac < 0.5 ? STYLES[lo] : STYLES[hi];
+    var lean = frac < 0.5 ? STYLES[hi] : STYLES[lo];
+    var balanced = focus < 0.06;
+    var heartR = Math.min(1, focus * 3.2) * (R - 22);
+    var heart = balanced ? [0, 0] : pt(heartR, ang);
+
+    // Summary
+    var max = Math.max.apply(null, scores);
+    var tops = data.filter(function (d) { return d.avg === max; });
+    var sorted = data.slice().sort(function (a, b) { return b.avg - a.avg || STYLES.indexOf(a.style) - STYLES.indexOf(b.style); });
+    var lede;
+    if (tops.length === 6) {
+      lede = "You rated all six styles the same (" + fmt(max) + "). Your love life may draw on a little of everything.";
+    } else if (tops.length > 1) {
+      lede = "You scored highest, and equally, on " + joinNames(tops.map(function (d) { return "<b>" + d.style.name + "</b>"; })) + " (" + fmt(max) + ").";
+    } else {
+      var top = tops[0].style;
+      lede = "Your strongest love style is <b>" + top.name + "</b>, " + top.short + " (" + fmt(max) + " out of 5). ";
+      if (sorted[1].avg !== sorted[2].avg) lede += relationLine(top, sorted[1].style);
+    }
+    document.getElementById("lede").innerHTML = lede;
+
+    // Love color
+    var swatch = document.getElementById("swatch");
+    var lct;
+    if (balanced) {
+      swatch.style.background = "conic-gradient(" + STYLES.map(function (s) { return s.color; }).join(", ") + ", " + STYLES[0].color + ")";
+      lct = "Your answers balance out at the very center of the wheel, so no single style pulls hardest. Your love color is the whole wheel at once.";
+    } else {
+      swatch.style.background = loveHex;
+      lct = "Your answers balance out nearest <b>" + near.name + "</b>, leaning toward " + lean.name + ". " +
+            "The more one style stands out in your answers, the brighter your color. <span class=\"hex\">" + loveHex.toUpperCase() + "</span>";
+    }
+    document.getElementById("lovecolor-text").innerHTML = lct;
+
+    // Rows, highest first
+    document.getElementById("styles").innerHTML = sorted.map(function (d) {
+      var pct = ((d.avg - 1) / 4) * 100;
+      return '<li class="style-row">' +
+        '<div class="style-head"><span class="dot" style="background:' + d.style.color + '"></span>' +
+        '<span class="style-name">' + d.style.name + '</span><span class="kind">' + d.style.kind + '</span>' +
+        '<span class="style-score"><strong>' + fmt(d.avg) + '</strong>' + band(d.avg) + '</span></div>' +
+        '<div class="track" aria-hidden="true"><span class="fill" style="width:' + pct + '%;background:' + d.style.color + '"></span></div>' +
+        '<p class="desc">' + d.style.desc + '</p></li>';
+    }).join("");
+
+    // Breakdown
+    document.getElementById("breakdown").innerHTML = data.map(function (d) {
+      return '<li><b>' + d.style.name + ': ' + fmt(d.avg) + '</b>' +
+        'Items ' + d.nums.join(", ") + ': (' + d.ratings.join(" + ") + ') ÷ 4 = ' + d.sum + ' ÷ 4 = ' + fmt(d.avg) + '</li>';
+    }).join("");
+
+    drawWheel(scores, heart, balanced ? "url(#lsq-rainbow)" : loveHex);
+    results.hidden = false;
+    if (animate) {
+      wheel.classList.add("pre");
+      // Two frames so the starting state is painted before the petals grow
+      requestAnimationFrame(function () { requestAnimationFrame(function () { wheel.classList.remove("pre"); }); });
+    } else {
+      wheel.classList.remove("pre");
+    }
+    notifyHeight();
+    return true;
+  }
+
+  document.getElementById("score-btn").addEventListener("click", function () {
+    if (score(true)) {
+      var h = document.getElementById("results-heading");
+      h.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+      h.focus({ preventScroll: true });
+    } else {
+      var first = form.querySelector(".item.missing input");
+      if (first) first.closest(".item").scrollIntoView({ block: "center" });
+    }
+  });
+
+  document.getElementById("reset-btn").addEventListener("click", function () {
+    form.reset();
+    form.querySelectorAll(".missing").forEach(function (el) { el.classList.remove("missing"); });
+    results.hidden = true;
+    notice.hidden = true;
+    progress.textContent = "0 of " + ITEMS.length + " answered";
+    window.scrollTo(0, 0);
+    notifyHeight();
+  });
+
+  document.getElementById("print-btn").addEventListener("click", function () {
+    document.querySelector("details").open = true;
+    window.print();
+  });
+
+  // Lets a host page resize the iframe if it listens for this message (harmless otherwise)
+  function notifyHeight() {
+    if (window.parent !== window) {
+      window.parent.postMessage({ type: "questionnaire-height", height: document.documentElement.scrollHeight }, "*");
+    }
+  }
+  window.addEventListener("load", notifyHeight);
+})();
+</script>
+</body>
+</html>
